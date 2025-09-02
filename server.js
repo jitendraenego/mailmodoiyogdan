@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const mysql = require('mysql2');
 const bodyParser = require('body-parser');
@@ -5,13 +6,12 @@ const bodyParser = require('body-parser');
 const app = express();
 app.use(bodyParser.json());
 
-/*
-// Configure your MySQL connection details
+// Configure your MySQL connection details from environment variables
 const connection = mysql.createConnection({
-  host: 'localhost',
-  user: 'root',           // your db username
-  password: 'root',       // your db password
-  database: 'my_database' // your db name
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME
 });
 
 // Connect to the database
@@ -22,29 +22,46 @@ connection.connect((err) => {
   }
   console.log('Connected to the database');
 });
-*/
 
-// Define the endpoint to receive webhook POST data
+// Webhook endpoint to receive and save form data
 app.post('/webhook', (req, res) => {
-  console.log(req.body);
-  const { companyName, contactNumber } = req.body;
+  console.log('Received webhook data:', req.body);
 
-  /*
-  // Insert the form data into your MySQL table (adjust table/column names as needed)
-  const query = 'INSERT INTO campaign_form (company_name, contact_number) VALUES (?, ?)';
-  connection.query(query, [companyName, contactNumber], (err) => {
-    if (err) {
-      res.status(500).send('Database error');
-      return;
+  const {
+    companyName,
+    contactNumber,
+    recipientEmail,
+    responseId,
+    recordedAt,
+    formId
+  } = req.body;
+
+  // Convert recordedAt.ts (Unix timestamp in seconds) to MySQL DATETIME string
+  const recordedAtDate = recordedAt && recordedAt.ts
+    ? new Date(recordedAt.ts * 1000).toISOString().slice(0, 19).replace('T', ' ')
+    : null;
+
+  const query = `
+    INSERT INTO campaign_form
+      (company_name, contact_number, recipient_email, response_id, recorded_at, form_id)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `;
+
+  connection.query(
+    query,
+    [companyName, contactNumber, recipientEmail, responseId, recordedAtDate, formId],
+    (err) => {
+      if (err) {
+        console.error('Database error:', err);
+        res.status(500).send('Database error');
+        return;
+      }
+      res.send('Data inserted successfully');
     }
-    res.send('Data inserted successfully');
-  });
-  */
-
-  // Just respond for testing the endpoint
-  res.send(`Received data - Company: ${companyName}, Contact: ${contactNumber}`);
+  );
 });
 
-app.listen(3002, () => {
-  console.log('Server running on port 3002');
+const port = process.env.PORT || 3002;
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
 });
