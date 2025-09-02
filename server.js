@@ -25,7 +25,7 @@ connection.connect((err) => {
 
 // Webhook endpoint to receive and save form data
 app.post('/webhook/mailmodo', (req, res) => {
-  console.log('Received webhook data:', req.body);
+  const scheme = req.headers['scheme'];
 
   const {
     companyName,
@@ -34,7 +34,6 @@ app.post('/webhook/mailmodo', (req, res) => {
     responseId,
     recordedAt,
     formId,
-    scheme
   } = req.body;
 
   // Convert recordedAt.ts (Unix timestamp in seconds) to MySQL DATETIME string
