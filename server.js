@@ -26,6 +26,7 @@ connection.connect((err) => {
 
 // Define the endpoint to receive webhook POST data
 app.post('/webhook', (req, res) => {
+  console.log(req.body);
   const { companyName, contactNumber } = req.body;
 
   /*
