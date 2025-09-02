@@ -24,7 +24,7 @@ connection.connect((err) => {
 });
 
 // Webhook endpoint to receive and save form data
-app.post('/webhook', (req, res) => {
+app.post('/webhook/mailmodo', (req, res) => {
   console.log('Received webhook data:', req.body);
 
   const {
