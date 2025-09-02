@@ -6,26 +6,20 @@ const bodyParser = require('body-parser');
 const app = express();
 app.use(bodyParser.json());
 
-// Configure your MySQL connection details from environment variables
-const connection = mysql.createConnection({
+// Create MySQL connection pool for stable connection management
+const pool = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME
-});
-
-// Connect to the database
-connection.connect((err) => {
-  if (err) {
-    console.error('Database connection failed: ' + err.stack);
-    return;
-  }
-  console.log('Connected to the database');
+  database: process.env.DB_NAME,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
 });
 
 // Webhook endpoint to receive and save form data
 app.post('/webhook/mailmodo', (req, res) => {
-  const scheme = req.headers['scheme'];
+  const scheme = req.headers['scheme'];  // Get scheme from headers
 
   const {
     companyName,
@@ -33,7 +27,7 @@ app.post('/webhook/mailmodo', (req, res) => {
     recipientEmail,
     responseId,
     recordedAt,
-    formId,
+    formId
   } = req.body;
 
   // Convert recordedAt.ts (Unix timestamp in seconds) to MySQL DATETIME string
@@ -41,13 +35,14 @@ app.post('/webhook/mailmodo', (req, res) => {
     ? new Date(recordedAt.ts * 1000).toISOString().slice(0, 19).replace('T', ' ')
     : null;
 
+  // Fixed placeholders - 7 fields, 7 placeholders
   const query = `
     INSERT INTO campaign_form
       (company_name, contact_number, recipient_email, response_id, recorded_at, form_id, scheme)
-    VALUES (?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
   `;
 
-  connection.query(
+  pool.query(
     query,
     [companyName, contactNumber, recipientEmail, responseId, recordedAtDate, formId, scheme],
     (err) => {
