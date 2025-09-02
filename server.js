@@ -33,7 +33,8 @@ app.post('/webhook/mailmodo', (req, res) => {
     recipientEmail,
     responseId,
     recordedAt,
-    formId
+    formId,
+    scheme
   } = req.body;
 
   // Convert recordedAt.ts (Unix timestamp in seconds) to MySQL DATETIME string
@@ -43,13 +44,13 @@ app.post('/webhook/mailmodo', (req, res) => {
 
   const query = `
     INSERT INTO campaign_form
-      (company_name, contact_number, recipient_email, response_id, recorded_at, form_id)
+      (company_name, contact_number, recipient_email, response_id, recorded_at, form_id, scheme)
     VALUES (?, ?, ?, ?, ?, ?)
   `;
 
   connection.query(
     query,
-    [companyName, contactNumber, recipientEmail, responseId, recordedAtDate, formId],
+    [companyName, contactNumber, recipientEmail, responseId, recordedAtDate, formId, scheme],
     (err) => {
       if (err) {
         console.error('Database error:', err);
